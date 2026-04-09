@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { X, Star, MapPin, Check, Minus, Plus, ArrowRight } from 'lucide-react'
+import { X, Star, MapPin, Check, Minus, Plus, ArrowRight, Construction } from 'lucide-react'
 import { useLanguage } from '@/lib/language-context'
 import type { Hotel, Amenity, AccessibilityFeature } from '@/lib/hotels-data'
 
@@ -51,10 +51,12 @@ export function HotelDrawer({ hotel, onClose }: HotelDrawerProps) {
   const [nights, setNights] = useState(3)
   const [imageLoaded, setImageLoaded] = useState(false)
   const [activeTab, setActiveTab] = useState<'overview' | 'accessibility'>('overview')
+  const [showDevBanner, setShowDevBanner] = useState(false)
 
   useEffect(() => {
     setImageLoaded(false)
     setActiveTab('overview')
+    setShowDevBanner(false)
   }, [hotel?.id])
 
   useEffect(() => {
@@ -313,8 +315,28 @@ export function HotelDrawer({ hotel, onClose }: HotelDrawerProps) {
             </div>
           </div>
 
+          {/* Dev Banner */}
+          {showDevBanner && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <Construction className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-amber-800">Сайт в разработке</p>
+                <p className="text-xs text-amber-600 mt-0.5">
+                  В скором времени бронирование будет доступно. Следите за обновлениями!
+                </p>
+              </div>
+              <button
+                onClick={() => setShowDevBanner(false)}
+                className="ml-auto text-amber-400 hover:text-amber-600 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
           {/* Book Button */}
           <button
+            onClick={() => setShowDevBanner(true)}
             className="w-full bg-primary hover:bg-primary/90 active:scale-[0.98] text-white font-bold py-4 rounded-2xl text-base flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl"
           >
             {t('bookNow')}

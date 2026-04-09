@@ -9,17 +9,16 @@ interface HotelGridProps {
   hotels: Hotel[]
   onHotelClick: (hotel: Hotel) => void
   loading?: boolean
+  onAuthRequired?: () => void
 }
 
-export function HotelGrid({ hotels, onHotelClick, loading }: HotelGridProps) {
+export function HotelGrid({ hotels, onHotelClick, loading, onAuthRequired }: HotelGridProps) {
   const { t } = useLanguage()
 
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <HotelCardSkeleton key={i} />
-        ))}
+        {Array.from({ length: 6 }).map((_, i) => <HotelCardSkeleton key={i} />)}
       </div>
     )
   }
@@ -28,14 +27,10 @@ export function HotelGrid({ hotels, onHotelClick, loading }: HotelGridProps) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <div className="w-20 h-20 rounded-2xl bg-secondary flex items-center justify-center mb-5 shadow-sm">
-          <Search className="w-9 h-9 text-muted-foreground/50" />
+          <Search className="w-9 h-9 text-muted-foreground/40" />
         </div>
-        <h3 className="text-xl font-bold text-foreground mb-2">
-          {t('noHotels')}
-        </h3>
-        <p className="text-muted-foreground max-w-sm text-sm">
-          {t('noHotelsHint')}
-        </p>
+        <h3 className="text-xl font-bold text-foreground mb-2">{t('noHotels')}</h3>
+        <p className="text-muted-foreground max-w-sm text-sm">{t('noHotelsHint')}</p>
       </div>
     )
   }
@@ -47,6 +42,7 @@ export function HotelGrid({ hotels, onHotelClick, loading }: HotelGridProps) {
           key={hotel.id}
           hotel={hotel}
           onClick={onHotelClick}
+          onAuthRequired={onAuthRequired}
         />
       ))}
     </div>

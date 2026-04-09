@@ -2,13 +2,15 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { Star, MapPin, ArrowRight } from 'lucide-react'
+import { Star, MapPin, ArrowRight, Heart } from 'lucide-react'
 import { useLanguage } from '@/lib/language-context'
+import { useAuth } from '@/lib/auth-context'
 import type { Hotel, Amenity } from '@/lib/hotels-data'
 
 interface HotelCardProps {
   hotel: Hotel
   onClick: (hotel: Hotel) => void
+  onAuthRequired?: () => void
 }
 
 const categoryColors: Record<string, { bg: string; text: string }> = {
@@ -33,13 +35,24 @@ const amenityIcons: Record<Amenity, string> = {
   'Airport Shuttle': '🚐',
 }
 
-export function HotelCard({ hotel, onClick }: HotelCardProps) {
+function getRatingLabel(rating: number): { label: string; color: string } {
+  if (rating >= 4.5) return { label: 'Отлично', color: 'bg-emerald-500' }
+  if (rating >= 4.0) return { label: 'Очень хорошо', color: 'bg-green-500' }
+  if (rating >= 3.5) return { label: 'Хорошо', color: 'bg-yellow-500' }
+  return { label: 'Нормально', color: 'bg-orange-400' }
+}
+
+export function HotelCard({ hotel, onClick, onAuthRequired }: HotelCardProps) {
   const { t } = useLanguage()
+  const { isFavorite, toggleFavorite, user } = useAuth()
   const [imageLoaded, setImageLoaded] = useState(false)
   const [hovered, setHovered] = useState(false)
+  const [heartAnim, setHeartAnim] = useState(false)
 
   const colors = categoryColors[hotel.category] || { bg: 'bg-gray-100', text: 'text-gray-700' }
   const hasAccessibility = hotel.accessibility.length > 0
+  const liked = isFavorite(hotel.id)
+  const { label: ratingLabel, color: ratingColor } = getRatingLabel(hotel.rating)
 
   const getReviewsLabel = () => {
     const count = hotel.reviewCount
@@ -48,9 +61,20 @@ export function HotelCard({ hotel, onClick }: HotelCardProps) {
     return `${count} ${t('reviews')}`
   }
 
+  const handleHeart = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!user) {
+      onAuthRequired?.()
+      return
+    }
+    setHeartAnim(true)
+    setTimeout(() => setHeartAnim(false), 400)
+    toggleFavorite(hotel.id)
+  }
+
   return (
     <article
-      className="card-animate group relative bg-white rounded-2xl overflow-hidden border border-border hover:border-primary/20 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+      className="card-animate group relative bg-white rounded-2xl overflow-hidden border border-border hover:border-primary/20 transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 cursor-pointer"
       onClick={() => onClick(hotel)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -59,12 +83,9 @@ export function HotelCard({ hotel, onClick }: HotelCardProps) {
       onKeyDown={(e) => e.key === 'Enter' && onClick(hotel)}
       aria-label={`${hotel.name}, ${hotel.city}. ${hotel.pricePerNight}$ за ночь`}
     >
-      {/* Image Container */}
+      {/* Image */}
       <div className="relative aspect-[4/3] overflow-hidden bg-secondary">
-        {/* Skeleton */}
-        {!imageLoaded && (
-          <div className="absolute inset-0 bg-secondary animate-pulse" />
-        )}
+        {!imageLoaded && <div className="absolute inset-0 bg-secondary animate-pulse" />}
 
         <Image
           src={hotel.image}
@@ -75,34 +96,48 @@ export function HotelCard({ hotel, onClick }: HotelCardProps) {
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />
 
-        {/* Top badges */}
-        <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
-          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${colors.bg} ${colors.text}`}>
-            {t(hotel.category.toLowerCase() as 'boutique' | 'resort' | 'business' | 'hostel' | 'villa')}
-          </span>
-          <span className="flex items-center gap-1 bg-white/95 backdrop-blur-sm text-foreground px-2 py-1 rounded-full text-xs font-bold shadow-sm">
-            <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-            {hotel.stars}★
-          </span>
-        </div>
+        {/* Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
 
-        {/* Accessibility badge */}
+        {/* Heart button */}
+        <button
+          className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 shadow-sm ${
+            liked
+              ? 'bg-red-500 text-white scale-110'
+              : 'bg-white/90 text-muted-foreground hover:bg-white hover:text-red-400'
+          } ${heartAnim ? 'scale-125' : ''}`}
+          onClick={handleHeart}
+          aria-label={liked ? 'Удалить из избранного' : 'Добавить в избранное'}
+        >
+          <Heart className={`w-4 h-4 transition-all ${liked ? 'fill-white' : ''}`} />
+        </button>
+
+        {/* Category badge */}
+        <span className={`absolute top-3 left-3 text-xs font-semibold px-2.5 py-1 rounded-full ${colors.bg} ${colors.text}`}>
+          {t(hotel.category.toLowerCase() as 'boutique' | 'resort' | 'business' | 'hostel' | 'villa')}
+        </span>
+
+        {/* Accessibility */}
         {hasAccessibility && (
-          <div className="absolute bottom-3 left-3">
-            <span
-              className="flex items-center gap-1 bg-accessible text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm accessible-badge"
-              title={`${hotel.accessibility.length} функций доступности`}
-            >
-              ♿ {hotel.accessibility.length}
-            </span>
-          </div>
+          <span
+            className="absolute bottom-3 left-3 flex items-center gap-1 bg-accessible text-white text-xs font-semibold px-2 py-1 rounded-full shadow-sm"
+            title={`${hotel.accessibility.length} функций доступности`}
+          >
+            ♿ {hotel.accessibility.length}
+          </span>
         )}
+
+        {/* Stars */}
+        <div className="absolute bottom-3 right-3 flex items-center gap-0.5">
+          {Array.from({ length: hotel.stars }).map((_, i) => (
+            <span key={i} className="text-amber-400 text-sm">★</span>
+          ))}
+        </div>
       </div>
 
       {/* Content */}
       <div className="p-4">
-        {/* Title & Location */}
-        <div className="mb-3">
+        <div className="mb-2">
           <h3 className="font-semibold text-base text-foreground line-clamp-1 group-hover:text-primary transition-colors">
             {hotel.name}
           </h3>
@@ -117,45 +152,38 @@ export function HotelCard({ hotel, onClick }: HotelCardProps) {
 
         {/* Amenities */}
         <div className="flex items-center gap-1 flex-wrap mb-3">
-          {hotel.amenities.slice(0, 4).map((amenity) => (
-            <span
-              key={amenity}
-              className="text-xs bg-secondary text-muted-foreground px-2 py-0.5 rounded-full"
-              title={t(amenity)}
-            >
+          {hotel.amenities.slice(0, 5).map((amenity) => (
+            <span key={amenity} className="text-sm" title={t(amenity)}>
               {amenityIcons[amenity]}
             </span>
           ))}
-          {hotel.amenities.length > 4 && (
-            <span className="text-xs text-muted-foreground px-1">
-              +{hotel.amenities.length - 4}
-            </span>
+          {hotel.amenities.length > 5 && (
+            <span className="text-xs text-muted-foreground">+{hotel.amenities.length - 5}</span>
           )}
         </div>
 
-        {/* Price & Rating */}
+        {/* Price + Rating */}
         <div className="flex items-center justify-between pt-3 border-t border-border">
           <div>
             <span className="text-xl font-bold text-foreground">${hotel.pricePerNight}</span>
-            <span className="text-muted-foreground text-sm ml-1">{t('perNight')}</span>
+            <span className="text-muted-foreground text-xs ml-1">{t('perNight')}</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="flex items-center gap-1 bg-amber-50 text-amber-700 px-2 py-1 rounded-lg">
-              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-              <span className="text-sm font-semibold">{hotel.rating}</span>
+          <div className="flex items-center gap-2">
+            <span className={`${ratingColor} text-white text-xs font-bold px-2 py-1 rounded-lg`}>
+              {hotel.rating}
+            </span>
+            <div className="text-right hidden sm:block">
+              <div className="text-xs font-medium text-foreground">{ratingLabel}</div>
+              <div className="text-xs text-muted-foreground">{getReviewsLabel()}</div>
             </div>
-            <span className="text-xs text-muted-foreground hidden sm:block">{getReviewsLabel()}</span>
           </div>
         </div>
 
-        {/* View Button - appears on hover */}
-        <div className={`mt-3 transition-all duration-200 ${hovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`}>
+        {/* View button on hover */}
+        <div className={`overflow-hidden transition-all duration-200 ${hovered ? 'max-h-12 mt-3 opacity-100' : 'max-h-0 mt-0 opacity-0'}`}>
           <button
             className="w-full bg-primary hover:bg-primary/90 text-white text-sm font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors"
-            onClick={(e) => {
-              e.stopPropagation()
-              onClick(hotel)
-            }}
+            onClick={(e) => { e.stopPropagation(); onClick(hotel) }}
             tabIndex={-1}
           >
             {t('viewDetails')}
@@ -176,15 +204,14 @@ export function HotelCardSkeleton() {
           <div className="h-4 bg-secondary animate-pulse rounded-full w-3/4" />
           <div className="h-3 bg-secondary animate-pulse rounded-full w-1/2" />
         </div>
-        <div className="flex gap-2">
-          <div className="h-5 w-5 bg-secondary animate-pulse rounded-full" />
-          <div className="h-5 w-5 bg-secondary animate-pulse rounded-full" />
-          <div className="h-5 w-5 bg-secondary animate-pulse rounded-full" />
-          <div className="h-5 w-5 bg-secondary animate-pulse rounded-full" />
+        <div className="flex gap-1.5">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-5 w-5 bg-secondary animate-pulse rounded" />
+          ))}
         </div>
         <div className="flex justify-between pt-3 border-t border-border">
           <div className="h-6 bg-secondary animate-pulse rounded-full w-20" />
-          <div className="h-6 bg-secondary animate-pulse rounded-lg w-12" />
+          <div className="h-7 bg-secondary animate-pulse rounded-lg w-14" />
         </div>
       </div>
     </div>

@@ -61,6 +61,22 @@ const cities: { city: string; country: string }[] = [
 
 const categories: HotelCategory[] = ['Boutique', 'Resort', 'Business', 'Hostel', 'Villa']
 
+// loremflickr — category-specific hotel images, always available, consistent per lock number
+// Format: https://loremflickr.com/{w}/{h}/{keywords}?lock={n}
+// Using lock offsets so images spread across categories
+const IMAGE_CATEGORIES = [
+  'hotel,room',
+  'hotel,lobby',
+  'hotel,pool',
+  'resort,pool',
+  'hotel,bedroom',
+  'hotel,luxury',
+  'villa,pool',
+  'beach,resort',
+  'hotel,suite',
+  'resort,view',
+]
+
 const allAmenities: Amenity[] = [
   'Pool', 'Spa', 'Gym', 'WiFi', 'Restaurant', 'Bar',
   'Parking', 'Beach Access', 'Rooftop', 'Pet Friendly', 'Airport Shuttle'
@@ -166,7 +182,7 @@ function generateHotels(): Hotel[] {
       category,
       amenities,
       accessibility,
-      image: `https://picsum.photos/seed/hotel${i}/600/400`,
+      image: `https://loremflickr.com/800/550/${IMAGE_CATEGORIES[i % IMAGE_CATEGORIES.length]}?lock=${i}`,
       description: descriptions[Math.floor(random() * descriptions.length)],
     })
   }

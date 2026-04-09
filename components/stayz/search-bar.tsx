@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { MapPin, Calendar, Users, Search, Minus, Plus, X } from 'lucide-react'
 import { useLanguage } from '@/lib/language-context'
 import {
@@ -17,22 +17,77 @@ interface SearchBarProps {
   initialDestination?: string
 }
 
+const SUGGESTIONS = [
+  { label: 'Dubai', display: 'Дубай', sublabel: 'ОАЭ', icon: '🏙️' },
+  { label: 'Bali', display: 'Бали', sublabel: 'Индонезия', icon: '🌴' },
+  { label: 'Barcelona', display: 'Барселона', sublabel: 'Испания', icon: '🏖️' },
+  { label: 'Tokyo', display: 'Токио', sublabel: 'Япония', icon: '🗼' },
+  { label: 'Almaty', display: 'Алматы', sublabel: 'Казахстан', icon: '🏔️' },
+  { label: 'Maldives', display: 'Мальдивы', sublabel: 'Мальдивы', icon: '🐠' },
+  { label: 'Istanbul', display: 'Стамбул', sublabel: 'Турция', icon: '🕌' },
+  { label: 'Turkey', display: 'Турция', sublabel: 'Страна', icon: '🇹🇷' },
+  { label: 'Bangkok', display: 'Бангкок', sublabel: 'Таиланд', icon: '🛕' },
+  { label: 'Thailand', display: 'Таиланд', sublabel: 'Страна', icon: '🇹🇭' },
+  { label: 'Paris', display: 'Париж', sublabel: 'Франция', icon: '🗺️' },
+  { label: 'Santorini', display: 'Санторини', sublabel: 'Греция', icon: '🏛️' },
+  { label: 'Rome', display: 'Рим', sublabel: 'Италия', icon: '🍕' },
+  { label: 'Sydney', display: 'Сидней', sublabel: 'Австралия', icon: '🦘' },
+  { label: 'London', display: 'Лондон', sublabel: 'Великобритания', icon: '🎡' },
+  { label: 'New York', display: 'Нью-Йорк', sublabel: 'США', icon: '🗽' },
+  { label: 'Cape Town', display: 'Кейптаун', sublabel: 'ЮАР', icon: '🦁' },
+  { label: 'Greece', display: 'Греция', sublabel: 'Страна', icon: '🇬🇷' },
+  { label: 'Japan', display: 'Япония', sublabel: 'Страна', icon: '🇯🇵' },
+  { label: 'France', display: 'Франция', sublabel: 'Страна', icon: '🇫🇷' },
+]
+
 export function SearchBar({ onSearch, initialDestination = '' }: SearchBarProps) {
   const { language, t } = useLanguage()
   const [destination, setDestination] = useState(initialDestination)
   const [checkIn, setCheckIn] = useState<Date | undefined>()
   const [checkOut, setCheckOut] = useState<Date | undefined>()
   const [guests, setGuests] = useState(2)
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const locale = language === 'ru' ? ru : language === 'kz' ? kk : enUS
 
-  const handleSearch = () => {
-    onSearch(destination, checkIn, checkOut, guests)
+  const filteredSuggestions = destination.trim().length > 0
+    ? SUGGESTIONS.filter(s =>
+        s.label.toLowerCase().includes(destination.toLowerCase()) ||
+        s.display.toLowerCase().includes(destination.toLowerCase()) ||
+        s.sublabel.toLowerCase().includes(destination.toLowerCase())
+      ).slice(0, 7)
+    : SUGGESTIONS.slice(0, 6)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  // Translate Russian/Kazakh typed input to English search term
+  const resolveQuery = (q: string): string => {
+    const lower = q.toLowerCase().trim()
+    const match = SUGGESTIONS.find(
+      s => s.display.toLowerCase() === lower || s.label.toLowerCase() === lower
+    )
+    return match ? match.label : q
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleSearch()
+  const handleSearch = () => {
+    setShowSuggestions(false)
+    onSearch(resolveQuery(destination), checkIn, checkOut, guests)
+  }
+
+  const pickSuggestion = (s: (typeof SUGGESTIONS)[0]) => {
+    setDestination(s.display)
+    setShowSuggestions(false)
+    onSearch(s.label, checkIn, checkOut, guests)
   }
 
   const getGuestsLabel = () => {
@@ -41,53 +96,92 @@ export function SearchBar({ onSearch, initialDestination = '' }: SearchBarProps)
     return `${guests} ${t('guests')}`
   }
 
-  return (
-    <div className="w-full max-w-4xl mx-auto">
-      {/* Main search pill */}
-      <div className="flex flex-col lg:flex-row items-stretch bg-white rounded-2xl shadow-xl border border-border overflow-hidden">
+  const formatDate = (d?: Date) => d ? format(d, 'dd MMM', { locale }) : undefined
 
-        {/* Destination */}
-        <div className="search-segment flex-1 flex items-center gap-3 px-5 py-4 border-b lg:border-b-0 lg:border-r border-border transition-colors">
-          <MapPin className="w-5 h-5 text-primary shrink-0" />
-          <div className="flex-1 min-w-0">
-            <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">
-              {t('destination')}
-            </label>
-            <div className="relative flex items-center">
-              <input
-                ref={inputRef}
-                type="text"
-                placeholder={t('destinationPlaceholder')}
-                value={destination}
-                onChange={(e) => setDestination(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="w-full text-sm font-medium text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/60"
-                aria-label={t('destination')}
-              />
-              {destination && (
-                <button
-                  onClick={() => { setDestination(''); inputRef.current?.focus() }}
-                  className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label="Clear"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
+  // Shared label style
+  const labelCls = 'text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-0.5'
+  // Shared value style
+  const valueCls = (hasValue: boolean) => `text-sm font-medium leading-tight ${hasValue ? 'text-foreground' : 'text-muted-foreground/50'}`
+
+  return (
+    <div ref={containerRef} className="w-full max-w-4xl mx-auto relative" style={{ zIndex: 10 }}>
+      <div className="flex flex-col lg:flex-row bg-white rounded-2xl shadow-2xl border border-border overflow-visible">
+
+        {/* ── WHERE ── */}
+        <div className="flex-[1.5] relative">
+          {/* Field itself — same structure as button fields */}
+          <div className="flex items-center gap-3 px-5 py-4 border-b lg:border-b-0 lg:border-r border-border h-full">
+            <MapPin className="w-5 h-5 text-primary shrink-0 mt-px" />
+            <div className="min-w-0 flex-1">
+              <label htmlFor="sb-destination" className={labelCls}>{t('destination')}</label>
+              <div className="flex items-center gap-1">
+                <input
+                  id="sb-destination"
+                  ref={inputRef}
+                  type="text"
+                  placeholder={t('destinationPlaceholder')}
+                  value={destination}
+                  onChange={e => { setDestination(e.target.value); setShowSuggestions(true) }}
+                  onFocus={() => setShowSuggestions(true)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleSearch()
+                    if (e.key === 'Escape') setShowSuggestions(false)
+                  }}
+                  className="min-w-0 w-full text-sm font-medium text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/50"
+                  autoComplete="off"
+                />
+                {destination && (
+                  <button
+                    type="button"
+                    onClick={() => { setDestination(''); inputRef.current?.focus(); setShowSuggestions(true) }}
+                    className="shrink-0 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
+
+          {/* Dropdown — rendered outside the field div, z-index above everything */}
+          {showSuggestions && filteredSuggestions.length > 0 && (
+            <div className="absolute top-[calc(100%+6px)] left-0 w-[min(400px,100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-border overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150"
+              style={{ zIndex: 9999 }}>
+              <div className="py-1.5">
+                <div className="px-4 py-1.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  {destination ? 'Результаты' : 'Популярные направления'}
+                </div>
+                {filteredSuggestions.map((s, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onMouseDown={e => { e.preventDefault(); pickSuggestion(s) }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-secondary transition-colors text-left"
+                  >
+                    <span className="text-lg w-7 text-center shrink-0 leading-none">{s.icon}</span>
+                    <div className="min-w-0">
+                      <span className="text-sm font-medium text-foreground">{s.display}</span>
+                      <span className="text-xs text-muted-foreground ml-1.5">{s.sublabel}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Check-in */}
+        {/* ── CHECK-IN ── */}
         <Popover>
           <PopoverTrigger asChild>
-            <button className="search-segment flex items-center gap-3 px-5 py-4 border-b lg:border-b-0 lg:border-r border-border transition-colors text-left hover:bg-accent/30 group">
-              <Calendar className="w-5 h-5 text-primary shrink-0" />
+            <button
+              type="button"
+              className="flex items-center gap-3 px-5 py-4 border-b lg:border-b-0 lg:border-r border-border hover:bg-orange-50/40 transition-colors text-left w-full lg:w-auto lg:min-w-[148px]"
+            >
+              <Calendar className="w-5 h-5 text-primary shrink-0 mt-px" />
               <div>
-                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">
-                  {t('checkIn')}
-                </span>
-                <span className={`text-sm font-medium ${checkIn ? 'text-foreground' : 'text-muted-foreground/60'}`}>
-                  {checkIn ? format(checkIn, 'dd MMM', { locale }) : t('selectDate')}
+                <span className={labelCls}>{t('checkIn')}</span>
+                <span className={valueCls(!!checkIn)}>
+                  {formatDate(checkIn) ?? t('selectDate')}
                 </span>
               </div>
             </button>
@@ -96,24 +190,28 @@ export function SearchBar({ onSearch, initialDestination = '' }: SearchBarProps)
             <CalendarComponent
               mode="single"
               selected={checkIn}
-              onSelect={setCheckIn}
-              disabled={(date) => date < new Date()}
+              onSelect={(d) => {
+                setCheckIn(d)
+                if (d && checkOut && d >= checkOut) setCheckOut(undefined)
+              }}
+              disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
               locale={locale}
             />
           </PopoverContent>
         </Popover>
 
-        {/* Check-out */}
+        {/* ── CHECK-OUT ── */}
         <Popover>
           <PopoverTrigger asChild>
-            <button className="search-segment flex items-center gap-3 px-5 py-4 border-b lg:border-b-0 lg:border-r border-border transition-colors text-left hover:bg-accent/30">
-              <Calendar className="w-5 h-5 text-primary shrink-0" />
+            <button
+              type="button"
+              className="flex items-center gap-3 px-5 py-4 border-b lg:border-b-0 lg:border-r border-border hover:bg-orange-50/40 transition-colors text-left w-full lg:w-auto lg:min-w-[148px]"
+            >
+              <Calendar className="w-5 h-5 text-primary shrink-0 mt-px" />
               <div>
-                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">
-                  {t('checkOut')}
-                </span>
-                <span className={`text-sm font-medium ${checkOut ? 'text-foreground' : 'text-muted-foreground/60'}`}>
-                  {checkOut ? format(checkOut, 'dd MMM', { locale }) : t('selectDate')}
+                <span className={labelCls}>{t('checkOut')}</span>
+                <span className={valueCls(!!checkOut)}>
+                  {formatDate(checkOut) ?? t('selectDate')}
                 </span>
               </div>
             </button>
@@ -123,47 +221,38 @@ export function SearchBar({ onSearch, initialDestination = '' }: SearchBarProps)
               mode="single"
               selected={checkOut}
               onSelect={setCheckOut}
-              disabled={(date) => date < (checkIn || new Date())}
+              disabled={(date) => date <= (checkIn ?? new Date(new Date().setHours(0, 0, 0, 0)))}
               locale={locale}
             />
           </PopoverContent>
         </Popover>
 
-        {/* Guests */}
+        {/* ── GUESTS ── */}
         <Popover>
           <PopoverTrigger asChild>
-            <button className="search-segment flex items-center gap-3 px-5 py-4 border-b lg:border-b-0 lg:border-r border-border transition-colors text-left hover:bg-accent/30">
-              <Users className="w-5 h-5 text-primary shrink-0" />
+            <button
+              type="button"
+              className="flex items-center gap-3 px-5 py-4 border-b lg:border-b-0 lg:border-r border-border hover:bg-orange-50/40 transition-colors text-left w-full lg:w-auto lg:min-w-[130px]"
+            >
+              <Users className="w-5 h-5 text-primary shrink-0 mt-px" />
               <div>
-                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">
-                  {t('guests')}
-                </span>
-                <span className="text-sm font-medium text-foreground">{getGuestsLabel()}</span>
+                <span className={labelCls}>{t('guests')}</span>
+                <span className={valueCls(true)}>{getGuestsLabel()}</span>
               </div>
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-56 bg-white border-border shadow-xl rounded-2xl p-4" align="start" sideOffset={8}>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-medium text-foreground">{t('guests')}</p>
-                <p className="text-xs text-muted-foreground">До 10 человек</p>
+                <p className="text-sm font-semibold text-foreground">{t('guests')}</p>
+                <p className="text-xs text-muted-foreground">Взрослые и дети</p>
               </div>
               <div className="flex items-center gap-3">
-                <button
-                  className="num-btn"
-                  onClick={() => setGuests(Math.max(1, guests - 1))}
-                  disabled={guests <= 1}
-                  aria-label="Decrease guests"
-                >
+                <button type="button" className="num-btn" onClick={() => setGuests(g => Math.max(1, g - 1))} disabled={guests <= 1}>
                   <Minus className="w-3.5 h-3.5" />
                 </button>
-                <span className="text-foreground font-semibold w-6 text-center text-sm">{guests}</span>
-                <button
-                  className="num-btn"
-                  onClick={() => setGuests(Math.min(10, guests + 1))}
-                  disabled={guests >= 10}
-                  aria-label="Increase guests"
-                >
+                <span className="text-foreground font-bold w-5 text-center text-sm">{guests}</span>
+                <button type="button" className="num-btn" onClick={() => setGuests(g => Math.min(10, g + 1))} disabled={guests >= 10}>
                   <Plus className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -171,14 +260,15 @@ export function SearchBar({ onSearch, initialDestination = '' }: SearchBarProps)
           </PopoverContent>
         </Popover>
 
-        {/* Search Button */}
-        <div className="p-2">
+        {/* ── SEARCH BUTTON ── */}
+        <div className="p-2 shrink-0">
           <button
+            type="button"
             onClick={handleSearch}
-            className="h-full w-full lg:w-auto bg-primary hover:bg-primary/90 active:scale-95 text-white font-semibold px-8 py-3 lg:py-0 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow-md"
+            className="w-full lg:h-full lg:w-auto bg-primary hover:bg-primary/90 active:scale-[0.97] text-white font-bold px-8 py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg text-[15px]"
           >
             <Search className="w-5 h-5" />
-            <span>{t('search')}</span>
+            {t('search')}
           </button>
         </div>
       </div>

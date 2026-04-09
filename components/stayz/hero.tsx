@@ -11,7 +11,7 @@ export function Hero({ onSearch }: HeroProps) {
   const { t } = useLanguage()
 
   return (
-    <section className="relative min-h-[72vh] flex flex-col items-center justify-center px-4 pt-20 pb-16 overflow-hidden hero-gradient">
+    <section className="relative min-h-[72vh] flex flex-col items-center justify-center px-4 pt-20 pb-16 hero-gradient">
       {/* Decorative blobs */}
       <div className="absolute top-12 left-1/4 w-72 h-72 bg-orange-100/60 rounded-full blur-3xl float-anim-slow pointer-events-none" />
       <div className="absolute bottom-16 right-1/4 w-56 h-56 bg-blue-100/50 rounded-full blur-3xl float-anim pointer-events-none" style={{ animationDelay: '2s' }} />
@@ -76,13 +76,19 @@ export function Hero({ onSearch }: HeroProps) {
         {/* Popular destinations */}
         <div className="hero-text-3 flex items-center justify-center gap-2 mt-8 flex-wrap">
           <span className="text-sm text-muted-foreground">Популярные:</span>
-          {['Дубай', 'Бали', 'Барселона', 'Токио', 'Алматы'].map((dest) => (
+          {[
+            { ru: 'Дубай', en: 'Dubai' },
+            { ru: 'Бали', en: 'Bali' },
+            { ru: 'Барселона', en: 'Barcelona' },
+            { ru: 'Токио', en: 'Tokyo' },
+            { ru: 'Алматы', en: 'Almaty' },
+          ].map((dest) => (
             <button
-              key={dest}
-              onClick={() => onSearch(dest)}
+              key={dest.en}
+              onClick={() => onSearch(dest.en)}
               className="text-sm font-medium text-primary hover:bg-accent px-3 py-1 rounded-full transition-all border border-primary/20 hover:border-primary/40"
             >
-              {dest}
+              {dest.ru}
             </button>
           ))}
         </div>

@@ -54,7 +54,7 @@ export function Hero({ onSearch }: HeroProps) {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 w-full max-w-4xl mx-auto text-center">
+      <div className="relative z-[60] w-full max-w-4xl mx-auto text-center">
         <div className="hero-text-1">
           <span className="inline-block bg-accent text-primary text-xs font-semibold px-3 py-1.5 rounded-full mb-6 border border-primary/20">
             ✨ Более 200 отелей по всему миру

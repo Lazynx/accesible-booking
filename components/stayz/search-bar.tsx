@@ -109,44 +109,46 @@ export function SearchBar({ onSearch, initialDestination = '' }: SearchBarProps)
 
         {/* ── WHERE ── */}
         <div className="flex-[1.5] relative">
-          {/* Field itself — same structure as button fields */}
-          <div className="flex items-center gap-3 px-5 py-4 border-b lg:border-b-0 lg:border-r border-border h-full">
+          <div
+            className="flex items-center gap-3 px-5 py-4 border-b lg:border-b-0 lg:border-r border-border hover:bg-orange-50/40 transition-colors cursor-text w-full text-left"
+            onClick={() => inputRef.current?.focus()}
+          >
             <MapPin className="w-5 h-5 text-primary shrink-0 mt-px" />
-            <div className="min-w-0 flex-1">
-              <label htmlFor="sb-destination" className={labelCls}>{t('destination')}</label>
-              <div className="flex items-center gap-1">
-                <input
-                  id="sb-destination"
-                  ref={inputRef}
-                  type="text"
-                  placeholder={t('destinationPlaceholder')}
-                  value={destination}
-                  onChange={e => { setDestination(e.target.value); setShowSuggestions(true) }}
-                  onFocus={() => setShowSuggestions(true)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') handleSearch()
-                    if (e.key === 'Escape') setShowSuggestions(false)
-                  }}
-                  className="min-w-0 w-full text-sm font-medium text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/50"
-                  autoComplete="off"
-                />
-                {destination && (
-                  <button
-                    type="button"
-                    onClick={() => { setDestination(''); inputRef.current?.focus(); setShowSuggestions(true) }}
-                    className="shrink-0 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
+            <div className="flex-1 min-w-0">
+              <span className={labelCls}>{t('destination')}</span>
+              <input
+                id="sb-destination"
+                ref={inputRef}
+                type="text"
+                placeholder={t('destinationPlaceholder')}
+                value={destination}
+                onChange={e => { setDestination(e.target.value); setShowSuggestions(true) }}
+                onFocus={() => setShowSuggestions(true)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleSearch()
+                  if (e.key === 'Escape') setShowSuggestions(false)
+                }}
+                className="text-sm font-medium leading-tight text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/50 p-0 m-0 block w-full"
+                autoComplete="off"
+              />
             </div>
+            {destination && (
+              <button
+                type="button"
+                onClick={e => { e.stopPropagation(); setDestination(''); inputRef.current?.focus(); setShowSuggestions(true) }}
+                className="shrink-0 ml-auto text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
-          {/* Dropdown — rendered outside the field div, z-index above everything */}
+          {/* Dropdown */}
           {showSuggestions && filteredSuggestions.length > 0 && (
-            <div className="absolute top-[calc(100%+6px)] left-0 w-[min(400px,100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-border overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150"
-              style={{ zIndex: 9999 }}>
+            <div
+              className="absolute top-[calc(100%+6px)] left-0 w-[min(400px,100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-border overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150"
+              style={{ zIndex: 9999 }}
+            >
               <div className="py-1.5">
                 <div className="px-4 py-1.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                   {destination ? 'Результаты' : 'Популярные направления'}

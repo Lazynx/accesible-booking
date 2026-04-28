@@ -1,8 +1,3 @@
-Вот готовый README — скопируй целиком в `README.md` в корне репозитория:
-
----
-
-```markdown
 # STAYZ — Accessible Hotel Booking Platform
 
 > An open-source, accessibility-first hotel booking platform aligned with UN Sustainable Development Goals.

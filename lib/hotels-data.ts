@@ -138,7 +138,7 @@ function getRandomItems<T>(arr: T[], count: number, random: () => number): T[] {
 function generateHotels(): Hotel[] {
   const hotels: Hotel[] = []
   
-  for (let i = 1; i <= 200; i++) {
+  for (let i = 1; i <= 300; i++) {
     const random = seededRandom(i * 12345)
     
     const cityData = cities[Math.floor(random() * cities.length)]
@@ -150,12 +150,15 @@ function generateHotels(): Hotel[] {
     const amenityCount = Math.floor(random() * 4) + 3
     const amenities = getRandomItems(allAmenities, amenityCount, random)
 
-    // Accessibility: ~60% of hotels have some features, higher-star more likely
-    const accessibilityCount = stars === 5
-      ? Math.floor(random() * 5) + 3
-      : stars === 4
-        ? Math.floor(random() * 4) + 1
-        : random() > 0.4 ? Math.floor(random() * 3) + 1 : 0
+    // Accessibility: большинство отелей теперь доступны, особенно высокозвездочные
+    const isAccessible = stars >= 4 || random() > 0.35
+    const accessibilityCount = isAccessible
+      ? stars === 5
+        ? Math.floor(random() * 4) + 3
+        : stars === 4
+          ? Math.floor(random() * 4) + 2
+          : Math.floor(random() * 3) + 1
+      : 0
     const accessibility = getRandomItems(allAccessibility, accessibilityCount, random)
 
     // Price based on category and stars

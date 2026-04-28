@@ -27,7 +27,6 @@
 - [How to Contribute](#how-to-contribute)
 - [License](#license)
 - [Team](#team)
-- [AI Usage Disclosure](#ai-usage-disclosure)
 
 ---
 
@@ -233,10 +232,10 @@ MIT was chosen to maximize adoption — especially by NGOs, governments, and dev
 ---
 
 ## Team
-
 | Name | Role | Contributions |
 |------|------|---------------|
-| **Kudinov Vladislav** | Lead Developer & Architect | Project setup, Next.js structure, core booking flow, deployment |
-| **Yerlan Yessenuly** | Frontend Developer | UI components, Tailwind styling, responsive design |
-| **Tsoy Alexandr** | Accessibility Specialist | WCAG compliance review, ARIA implementation, testing |
-| **Kubenova Aruzhan** | Documentation & Research | README, SDG analysis, competitor research, SWOT |
+| Kudinov Vladislav | Lead Developer & Architect | Project setup, Next.js structure, core booking flow, deployment |
+| Yerlan Yessenuly | Frontend Developer | UI components, Tailwind styling, responsive design |
+| Tsoy Alexandr | Accessibility Specialist | WCAG compliance review, ARIA implementation, testing |
+| Kubenova Aruzhan | Documentation & Research | README, SDG analysis, competitor research, SWOT |
+| Kuleshov Ilya | QA & DevOps | Manual testing, bug reporting, Vercel deployment configuration, Dependabot setup |
